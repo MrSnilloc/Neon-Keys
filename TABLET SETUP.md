@@ -16,15 +16,15 @@ so GitHub hosts it for free. Do this in Edge on the laptop, signed in to github.
 
 1. **Accept the tablet update.** Open https://github.com/MrSnilloc/Neon-Keys, click the
    **Pull requests** tab, open the Neon Keys tablet one, and click **Merge pull request**, then **Confirm merge**.
-2. **Make the project public.** On the project page click
-   **Settings** (top row, the gear), scroll right to the bottom to **Danger Zone**, click
-   **Change visibility**, then **Make public**, and confirm.
-   (Your Songs folder and Save folder are never uploaded, so your MIDI files and progress stay private.)
-3. **Turn on the website.** Still in **Settings**, click **Pages** in the left menu.
+2. **Turn on the website.** On the project page click **Settings** (top row, the gear),
+   then **Pages** in the left menu.
    Under **Build and deployment**, set **Source** to **GitHub Actions**.
-4. **Publish it.** Click the **Actions** tab at the top, click **Publish Neon Keys** on the
+3. **Publish it.** Click the **Actions** tab at the top, click **Publish Neon Keys** on the
    left, then the **Run workflow** button, then the green **Run workflow**.
    After a minute or two a green tick appears. That's it, the address above now works.
+
+The project is public, but your Songs folder and Save folder are never uploaded,
+so your MIDI files and progress stay private.
 
 From now on, every change to the game on GitHub is published automatically, and the
 tablet picks it up by itself next time it's online.
