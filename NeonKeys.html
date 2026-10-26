@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Neon Keys</title>
+<!-- tablet app: home-screen icon, full screen, works offline -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="theme-color" content="#07020f">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -403,10 +409,38 @@ textarea#seNote:focus{outline:none;border-color:var(--cyan)}
 .rcu{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-radius:9px;border-left:4px solid var(--ac);background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 10%,transparent),transparent)}
 .rcu b{font-size:15.5px}.rcu span{display:flex;gap:10px}.rcu i{font-style:normal;color:rgba(255,255,255,.25);font-size:14px;min-width:34px;text-align:center}.rcu i.on{color:var(--gold)}
 .kbs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%}.kbs b{display:block;text-align:center;font:900 18px Orbitron;color:var(--uc);margin-bottom:4px}
+/* songs added on the tablet, backups, touch screens */
+#pauseBtn{right:56px}
+body:not(.touch) #pauseBtn,body:not(.touch) .touchOnly,body.touch .mouseOnly{display:none}
+.libtools{margin:0 0 8px}.libtools .btn{padding:7px 16px;font-size:12.5px}
+.sedit{display:inline-block;margin-left:8px;padding:1px 9px;border-radius:99px;font:700 11px Orbitron;letter-spacing:.06em;color:var(--cyan);border:1px solid rgba(25,246,255,.4)}
+.sbtns{justify-content:flex-start;margin-top:8px}.sbtns .btn{padding:8px 18px;font-size:12.5px}
+.mtoast{position:fixed;z-index:30;bottom:24px;max-width:90vw;text-align:center}
+.sdlg{background:#100622;box-shadow:0 0 0 100vmax rgba(4,1,10,.55),0 0 50px rgba(255,61,242,.25)}
+.sdlg .chip.on{background:var(--cyan);color:#0b0216}
+.sdlg input[type=text]{width:100%;margin:4px 0 6px;padding:8px 10px;border-radius:9px;background:#140a28;color:var(--text);border:1px solid var(--line);font:600 16px Rajdhani}
+.sdlg input[type=text]:focus{outline:none;border-color:var(--cyan)}
+html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+body.touch{touch-action:manipulation}
+body.touch .tabs span{padding:12px 18px}
+body.touch .btn{padding:13px 24px}
+body.touch .seg span{padding:9px 16px}
+body.touch .tog{width:56px;height:30px}body.touch .tog::after{width:24px;height:24px}body.touch .tog.on::after{left:29px}
+body.touch .row{padding:7px 2px}
+body.touch .cat{padding:8px 15px;font-size:15px}
+body.touch .chip{padding:8px 14px;font-size:15px}
+body.touch .song{padding:11px 14px}
+body.touch .sedit{padding:6px 14px;font-size:12px}
+body.touch .fsBtn{width:46px;height:46px}body.touch #pauseBtn{right:66px}
+body.touch input[type=range]{width:190px;height:30px}
+body.touch .stb{padding:10px 15px}
+body.touch .tb{width:30px;height:30px}
+body.touch #rollScroll{touch-action:none}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<button id="pauseBtn" class="fsBtn hidden" title="Pause"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
 <button id="fsBtn" class="fsBtn" title="Full screen"><svg viewBox="0 0 24 24"><path id="fsIcon" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 
 <!-- MENU -->
@@ -454,6 +488,7 @@ textarea#seNote:focus{outline:none;border-color:var(--cyan)}
         <div>
           <h3>SETLIST</h3>
           <div id="catBar" class="cats"></div>
+          <div id="libTools" class="libtools hidden"><button class="btn" id="addSongsBtn">+ ADD SONGS</button><input type="file" id="addSongsFile" multiple class="hidden"></div>
           <div id="libNote" class="libnote hidden"></div>
           <div id="songList" class="songs"></div>
         </div>
@@ -522,12 +557,16 @@ textarea#seNote:focus{outline:none;border-color:var(--cyan)}
           <div class="od"><b>OVERDRIVE</b> &nbsp;Hit every note in the <span style="color:var(--gold)">gold bars</span> to charge it. At half full, play <b>C + E + G</b> together to fire it for double points.</div>
           <h3 style="margin-top:14px">YOUR PROGRESS</h3>
           <div id="saveStatus" class="savebox"></div>
+          <div class="btns sbtns"><button class="btn" id="backupBtn">BACK UP</button><button class="btn" id="restoreBtn">RESTORE…</button></div>
+          <input type="file" id="restoreFile" class="hidden">
         </div>
       </div>
     </div>
 
     <div class="remote" id="menuRemote"></div>
-    <div class="hint">Press keys on your keyboard to test them on screen. &nbsp;No cable? Computer keys
+    <div class="hint touchOnly">Press keys on your keyboard to test them on screen. &nbsp;Tap a song, then the big button to play (or double-tap it).
+      During a song, tap <b>&#10073;&#10073;</b> at the top right to pause, or press the top C on your keyboard.</div>
+    <div class="hint mouseOnly">Press keys on your keyboard to test them on screen. &nbsp;No cable? Computer keys
       <kbd>A</kbd>–<kbd>K</kbd> = C D E F G A B C, <kbd>W</kbd><kbd>E</kbd><kbd>T</kbd><kbd>Y</kbd><kbd>U</kbd> = black keys, <kbd>-</kbd>/<kbd>=</kbd> octave.
       In game &amp; drills: <kbd>Esc</kbd> pause/back <kbd>R</kbd> restart <kbd>L</kbd> loop <kbd>Z</kbd> zoom <kbd>N</kbd> names</div>
   </div>
@@ -581,7 +620,7 @@ textarea#seNote:focus{outline:none;border-color:var(--cyan)}
       <div class="rollWrap"><canvas id="roll"></canvas><div id="rollScroll"><div id="rollSpace"></div></div></div>
     </div>
   </div>
-  <div class="stHelp"><span id="stLast" style="float:right;color:var(--cyan);font-weight:700">Play a key on your keyboard…</span><b>Click</b> a square to add a note · <b>drag</b> to make it longer or move it · <b>right-click</b> or double-click to delete · click the <b>bar numbers</b> to choose where to start · play your keyboard to hear the selected instrument · <b>Space</b> = play/stop</div>
+  <div class="stHelp"><span id="stLast" style="float:right;color:var(--cyan);font-weight:700">Play a key on your keyboard…</span><b>Click</b> a square to add a note · <b>drag</b> to make it longer or move it · <b class="mouseOnly">right-click</b><span class="mouseOnly"> or </span>double-click<span class="touchOnly">/double-tap</span> to delete<span class="touchOnly"> · <b>two fingers</b> to scroll</span> · click the <b>bar numbers</b> to choose where to start · play your keyboard to hear the selected instrument · <b>Space</b> = play/stop</div>
   <div id="stToast" class="sttoast"></div>
   <div id="stOpen" class="stDlg hidden"><div class="res coachbox"><div class="ctitle" style="font-size:24px">YOUR SONGS</div><div id="stOpenList" style="margin:12px 0"></div><div class="btns"><button class="btn" id="stOpenClose">CLOSE</button></div></div></div>
 </div>
@@ -632,6 +671,20 @@ textarea#seNote:focus{outline:none;border-color:var(--cyan)}
     <div class="ctitle" style="text-shadow:0 0 14px var(--cyan),0 0 34px var(--cyan)">REPORT CARD</div>
     <div id="rcBody"></div>
     <div class="btns"><button class="btn pri" id="rcClose">CLOSE</button></div>
+  </div>
+</div>
+
+<div id="mToast" class="sttoast mtoast"></div>
+
+<!-- ADD / EDIT SONGS (songs kept on the tablet) -->
+<div id="songDlg" class="overlay hidden">
+  <div class="res coachbox sdlg">
+    <div class="ctitle" id="sdTitle" style="font-size:24px"></div>
+    <div id="sdSub" class="csub"></div>
+    <label class="nlabel">Put in this group</label>
+    <div id="sdCats" class="chips"></div>
+    <input type="text" id="sdNew" maxlength="40" placeholder="…or type a new group name">
+    <div class="btns"><button class="btn" id="sdCancel">CANCEL</button><button class="btn hidden" id="sdDel">DELETE SONG</button><button class="btn pri" id="sdOk">ADD</button></div>
   </div>
 </div>
 
@@ -691,7 +744,10 @@ textarea#seNote:focus{outline:none;border-color:var(--cyan)}
     setTimeout(retry, 700);
     return;
   }
-  const r = xhr('GET', '/save');
+  // the helper only ever runs on the laptop (http://localhost); online and on the tablet there is nothing to ask
+  const r = location.protocol === 'http:' ? xhr('GET', '/save') : null;
+  // no helper but a proper web address (the tablet app): progress is kept on the device itself
+  NK.app = r === null && window.isSecureContext;
   if (r !== null) {
     NK.helper = location.origin;
     let srv = {}; try { srv = JSON.parse(r); } catch (e) {}
@@ -928,7 +984,9 @@ const store = {
   }
 };
 // write Save\progress.json shortly after anything changes
-let saveTimer = 0, saveState = NK.helper ? 'ok' : 'browser';
+let saveTimer = 0, saveState = NK.helper ? 'ok' : NK.app ? 'device' : 'browser';
+// on the tablet, ask Android to keep our storage even when it is short of space
+if (NK.app && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 function saveSoon() {
   if (!NK.helper) return;
   clearTimeout(saveTimer);
@@ -1283,7 +1341,7 @@ async function initMIDI() {
   try {
     MIDI.access = await navigator.requestMIDIAccess({sysex:false});
     hookMIDI(); MIDI.access.onstatechange = hookMIDI;
-  } catch (e) { setStatus(false, 'MIDI blocked. Click the icon in the address bar and Allow MIDI.'); }
+  } catch (e) { setStatus(false, TOUCH ? 'MIDI blocked. In Chrome: ⋮ → Settings → Site settings → MIDI → allow this site, then reopen Neon Keys.' : 'MIDI blocked. Click the icon in the address bar and Allow MIDI.'); }
 }
 function hookMIDI() {
   const ins = [...MIDI.access.inputs.values()].filter(i => i.state === 'connected');
@@ -1332,6 +1390,7 @@ let pcOct = 60;
 window.addEventListener('keydown', e => {
   if (e.repeat) return;
   if (e.target && e.target.closest && e.target.closest('input[type=text], input[type=number], textarea, select')) return;
+  if (visible('songDlg')) { if (e.key === 'Escape') Shelf.close(); return; }
   if (Studio.open && studioKey(e, e.key.toLowerCase())) return;
   const k = e.key.toLowerCase();
   if (Mini.active) { if (k === 'escape') { Mini.quit(); return; } if (k === ' ') { e.preventDefault(); Mini.pedal(true); return; } }
@@ -1361,6 +1420,7 @@ window.addEventListener('blur', () => { for (const m of [...pressed.keys()]) key
 /* ---------- canvas + layout ---------- */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 let W = 0, H = 0, DPR = 1;
+let HUD_R = 62;   // the song title etc. stop short of the buttons in the top right corner
 const layout = {};
 let skyCache = null;
 function resize() {
@@ -1875,6 +1935,8 @@ function spawnSparks(x, y, col, n, power = 1) {
 function addShake(v) { if (settings.shake) shake = Math.min(18, shake + v); }
 function toast(t) {
   toastMsg = {t, life:1.6};
+  // the game draws its messages on the stage, which is hidden behind the menu: show them on top there
+  if (!(typeof Studio !== 'undefined' && Studio.open) && (!$('menu').classList.contains('hidden') || !$('songDlg').classList.contains('hidden'))) { const el = $('mToast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.m); toast.m = setTimeout(() => el.classList.remove('show'), 3500); }
   if (typeof Studio !== 'undefined' && Studio.open) { const el = $('stToast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 3200); }
 }
 function banner(t, col) { banners.push({t, col, life:0, max:1.5}); }
@@ -2501,15 +2563,15 @@ function drawHUD(t) {
   }
   if (settings.sheet) drawStaff(t);
   // song + progress
-  ctx.textAlign = 'right'; ctx.font = '700 18px Orbitron'; ctx.fillStyle = '#ecebff'; ctx.fillText(game.song.title, W - 62, 34);
+  ctx.textAlign = 'right'; ctx.font = '700 18px Orbitron'; ctx.fillStyle = '#ecebff'; ctx.fillText(game.song.title, W - HUD_R, 34);
   const prog = Math.max(0, Math.min(1, game.now / game.song.length));
-  ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(W - 262, 46, 200, 5);
-  const pg = ctx.createLinearGradient(W - 262, 0, W - 62, 0); pg.addColorStop(0, '#ff3df2'); pg.addColorStop(1, '#19f6ff');
-  ctx.fillStyle = pg; ctx.fillRect(W - 262, 46, 200 * prog, 5);
-  for (const b of game.troubleBars) { ctx.fillStyle = '#ff3b5c'; ctx.shadowColor = '#ff3b5c'; ctx.shadowBlur = 6; ctx.fillRect(W - 262 + 200 * Math.min(1, b * game.bpb / game.song.length), 41, 2.5, 13); ctx.shadowBlur = 0; }
-  if (game.drill) { const d = game.drill; ctx.strokeStyle = '#19f6ff'; ctx.lineWidth = 1.5; ctx.strokeRect(W - 262 + 200 * d.S / game.song.length, 40, Math.max(3, 200 * (d.end - d.S) / game.song.length), 17); }
-  if (Coach.active && !game.career) { ctx.textAlign = 'right'; ctx.font = '700 12px Orbitron'; const st = STEPS[Coach.step]; ctx.fillStyle = st.col; ctx.fillText('COACH · ' + st.name + ' · ' + coachClock(), W - 62, 70); }
-  if (game.venue && game.career) { ctx.textAlign = 'right'; ctx.font = '700 12px Orbitron'; ctx.fillStyle = theme.accent; ctx.fillText(game.venue.name.toUpperCase() + ' · ' + game.gigTag, W - 62, 66); }
+  ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(W - HUD_R - 200, 46, 200, 5);
+  const pg = ctx.createLinearGradient(W - HUD_R - 200, 0, W - HUD_R, 0); pg.addColorStop(0, '#ff3df2'); pg.addColorStop(1, '#19f6ff');
+  ctx.fillStyle = pg; ctx.fillRect(W - HUD_R - 200, 46, 200 * prog, 5);
+  for (const b of game.troubleBars) { ctx.fillStyle = '#ff3b5c'; ctx.shadowColor = '#ff3b5c'; ctx.shadowBlur = 6; ctx.fillRect(W - HUD_R - 200 + 200 * Math.min(1, b * game.bpb / game.song.length), 41, 2.5, 13); ctx.shadowBlur = 0; }
+  if (game.drill) { const d = game.drill; ctx.strokeStyle = '#19f6ff'; ctx.lineWidth = 1.5; ctx.strokeRect(W - HUD_R - 200 + 200 * d.S / game.song.length, 40, Math.max(3, 200 * (d.end - d.S) / game.song.length), 17); }
+  if (Coach.active && !game.career) { ctx.textAlign = 'right'; ctx.font = '700 12px Orbitron'; const st = STEPS[Coach.step]; ctx.fillStyle = st.col; ctx.fillText('COACH · ' + st.name + ' · ' + coachClock(), W - HUD_R, 70); }
+  if (game.venue && game.career) { ctx.textAlign = 'right'; ctx.font = '700 12px Orbitron'; ctx.fillStyle = theme.accent; ctx.fillText(game.venue.name.toUpperCase() + ' · ' + game.gigTag, W - HUD_R, 66); }
   // crowd meter
   if (game.mode !== 'listen') {
     const mx = W - 34, my = 84, mh = Math.max(90, layout.hitY - my - 30);
@@ -2720,8 +2782,8 @@ function renderMenu() {
   html += '</div>';
   $('venueDetail').innerHTML = html;
   document.querySelectorAll('.gig').forEach(el => {
-    el.onclick = () => { settings.gig = el.dataset.g; saveSettings(); renderMenu(); };
-    el.ondblclick = () => { if (!el.classList.contains('locked')) startGig('play'); };
+    el.onclick = () => { if (doubleTap('gig:' + el.dataset.g) && !el.classList.contains('locked')) { startGig('play'); return; } settings.gig = el.dataset.g; saveSettings(); renderMenu(); };
+    el.ondblclick = () => { if (!TOUCH && !el.classList.contains('locked')) startGig('play'); };
   });
   const gOpen = gigState(vSel, settings.gig).open;
   $('gigPlay').disabled = $('gigRehearse').disabled = !gOpen;
@@ -2733,10 +2795,13 @@ function renderMenu() {
   $('catBar').innerHTML = CATS.map(c => `<span class="cat${c === settings.cat ? ' on' : ''}" data-c="${c.replace(/"/g, '&quot;')}">${c}<i>${SONGS.filter(s => s.cat === c).length}</i></span>`).join('');
   document.querySelectorAll('.cat').forEach(el => el.onclick = () => pickCat(el.dataset.c));
   const ln = $('libNote');
-  const note = !LIB_LOADED ? 'To see the songs in your <b>Songs</b> folder, open the game with <b>Start Neon Keys.bat</b>.'
+  const note = !NK.helper && location.protocol !== 'file:' ? (!SONGS.some(s => s.lib) ? 'Tap <b>+ ADD SONGS</b> to load <b>.mid</b> files from this device. Each group you put them in shows up as a tab here.'
+      : LIB_ERRORS.length && settings.cat !== BUILTIN_CAT ? `Couldn't read ${LIB_ERRORS.length} file${LIB_ERRORS.length > 1 ? 's' : ''}: ${LIB_ERRORS.join(', ')}` : '')
+    : !LIB_LOADED ? 'To see the songs in your <b>Songs</b> folder, open the game with <b>Start Neon Keys.bat</b>.'
     : CATS.length === 1 ? 'Put <b>.mid</b> files in the <b>Songs</b> folder (a folder inside it becomes a group here), then restart with <b>Start Neon Keys.bat</b>.'
     : LIB_ERRORS.length && settings.cat !== BUILTIN_CAT ? `Couldn't read ${LIB_ERRORS.length} file${LIB_ERRORS.length > 1 ? 's' : ''}: ${LIB_ERRORS.join(', ')}` : '';
   ln.innerHTML = note; ln.classList.toggle('hidden', !note);
+  $('libTools').classList.toggle('hidden', !!NK.helper);
   const fl = $('songList'); fl.innerHTML = '';
   for (const s of SONGS.filter(x => x.cat === settings.cat)) {
     const open = songOpen(s.id), v = venueOf(s.id);
@@ -2744,10 +2809,10 @@ function renderMenu() {
     const el = document.createElement('div'); el.className = 'song' + (s.id === settings.song ? ' sel' : '') + (open ? '' : ' locked');
     el.innerHTML = `<div class="t">${open ? '' : '🔒 '}${s.title}</div><div class="d">${diffStr(s.diff)}</div>
       <div class="m">${open ? `${s.by} · ${s.bpm} BPM${s.lh ? ' · both hands' : ''}${s.bpb === 3 ? ' · 3/' + (s.tsb || 4) : ''}` : (s.lesson ? 'Unlocks in ' + School.lessonForSong(s.id) : 'Unlock it in Career at ' + (v ? v.name : ''))}</div>
-      <div class="b">${bp ? 'Play ' + starStr(bp.stars) + ' ' + bp.score.toLocaleString() : bw ? 'Wait ' + starStr(bw.stars) : ''}</div>`;
+      <div class="b">${bp ? 'Play ' + starStr(bp.stars) + ' ' + bp.score.toLocaleString() : bw ? 'Wait ' + starStr(bw.stars) : ''}${s.shelf ? '<span class="sedit">EDIT</span>' : ''}</div>`;
     if (open) {
-      el.onclick = () => { settings.song = s.id; saveSettings(); renderMenu(); };
-      el.ondblclick = () => { settings.song = s.id; startGame(); };
+      el.onclick = e => { if (e.target.closest('.sedit')) { Shelf.edit(s); return; } if (doubleTap('song:' + s.id)) { startGame(); return; } settings.song = s.id; saveSettings(); renderMenu(); };
+      el.ondblclick = () => { if (TOUCH) return; settings.song = s.id; startGame(); };
     }
     fl.appendChild(el);
   }
@@ -3193,8 +3258,9 @@ function stepActivities(id) {
 /* ---------- PRACTICE tab ---------- */
 function renderSaveStatus() {
   const el = $('saveStatus'); if (!el) return;
-  el.classList.toggle('warn', saveState !== 'ok');
-  el.innerHTML = saveState === 'ok' ? '✓ Saved in your Piano folder: <code>Save\\progress.json</code><br><small style="color:var(--dim)">A backup copy is kept for each of the last 14 days in <code>Save\\Backups</code>.</small>'
+  el.classList.toggle('warn', saveState === 'error' || saveState === 'browser');
+  el.innerHTML = saveState === 'device' ? '✓ Saved automatically on this device.<br><small style="color:var(--dim)">Tap <b>BACK UP</b> now and then to keep a copy somewhere safe, like Google Drive. <b>RESTORE</b> loads a backup, including <code>Save\\progress.json</code> from your laptop.</small>'
+    : saveState === 'ok' ?'✓ Saved in your Piano folder: <code>Save\\progress.json</code><br><small style="color:var(--dim)">A backup copy is kept for each of the last 14 days in <code>Save\\Backups</code>.</small>'
     : saveState === 'error' ? '⚠ Lost touch with the Neon Keys helper. Progress is still kept in the browser. Restart with <b>Start Neon Keys.bat</b> to save to your folder again.'
     : '⚠ Progress is only saved in this browser right now. Open the game with <b>Start Neon Keys.bat</b> to keep it safe in your Piano folder.';
 }
@@ -3617,7 +3683,7 @@ async function stSave(quiet) {
   }
   let song = null;
   try { if (c.tracks.some(t => t.notes.length)) song = addLibSong({folder:'My Compositions', file, data:toB64(mid)}); } catch (e) {}
-  if (!quiet) toast(ok ? `Saved "${c.name}" to your Piano folder. It's in Free Play → My Compositions.` : `Saved "${c.name}" in this browser. Start with Start Neon Keys.bat to save to your folder.`);
+  if (!quiet) toast(ok ? `Saved "${c.name}" to your Piano folder. It's in Free Play → My Compositions.` : NK.app ? `Saved "${c.name}" on this device. It's in Free Play → My Compositions.` : `Saved "${c.name}" in this browser. Start with Start Neon Keys.bat to save to your folder.`);
   return song;
 }
 async function stOpenList() {
@@ -3816,13 +3882,29 @@ function setupRoll() {
   sc.addEventListener('scroll', drawRoll);
   sc.addEventListener('contextmenu', e => e.preventDefault());
   sc.addEventListener('wheel', e => { if (e.ctrlKey) { e.preventDefault(); const z = Math.max(0.5, Math.min(2.5, Studio.zoom * (e.deltaY < 0 ? 1.15 : 0.87))); Studio.zoom = z; drawRoll(); } }, {passive:false});
-  sc.addEventListener('mousedown', e => {
+  // fingers: one finger edits like the mouse, two fingers scroll the roll, double-tap deletes
+  const fingers = new Map();
+  let pan = null, lastTapNote = null;
+  sc.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch') {
+      fingers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if (fingers.size === 2) {   // second finger: scroll instead, and take back what the first finger did
+        if (Studio.drag) { if (Studio.drag.mode !== 'erase') stUndo(); Studio.drag = null; }
+        pan = {x:avgF('x'), y:avgF('y'), l:sc.scrollLeft, t:sc.scrollTop}; return;
+      }
+      if (fingers.size > 2) return;
+    } else if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2) return;
     const h = rollHit(e), tr = stTrack(), G = h.G;
     if (h.ly < RL.head) { if (h.lx > RL.keys) { Studio.cursor = Math.max(0, Math.min(Studio.steps - 1, Math.floor(h.step / 4) * 4)); if (Studio.playing) stPlay(Studio.cursor); drawRoll(); } return; }
     if (h.lx < RL.keys) { if (h.row >= 0 && h.row < G.rows) previewNote(h.m); return; }
     if (h.row < 0 || h.row >= G.rows || h.step < 0 || h.step >= Studio.steps) return;
     e.preventDefault();
     const hit = noteAt(tr, h.m, h.step);
+    if (e.pointerType === 'touch') {
+      const now = performance.now(), again = hit && lastTapNote && lastTapNote.n === hit && now - lastTapNote.t < 400;
+      lastTapNote = hit ? {n:hit, t:now} : null;
+      if (again) { stPush(); tr.notes.splice(tr.notes.indexOf(hit), 1); lastTapNote = null; stChanged(); drawRoll(); return; }
+    }
     if (e.button === 2) { if (hit) { stPush(); tr.notes.splice(tr.notes.indexOf(hit), 1); stChanged(); drawRoll(); } Studio.drag = {mode:'erase'}; return; }
     stPush();
     if (hit) {
@@ -3834,10 +3916,16 @@ function setupRoll() {
       const s = Math.floor(h.step / grid) * grid, m = G.drum ? h.m : stSnapScale(h.m);
       const n = {s, l:Math.min(L, Studio.steps - s), m, v:0.85}; tr.notes.push(n);
       Studio.drag = {mode:G.drum ? 'paint' : 'create', n, start:s, grid:L, painted:new Set([s + ':' + m])}; previewNote(m);
+      lastTapNote = {n, t:performance.now()};
     }
     stChanged(); drawRoll();
   });
-  addEventListener('mousemove', e => {
+  const avgF = k => { let a = 0; for (const f of fingers.values()) a += f[k]; return a / fingers.size; };
+  addEventListener('pointermove', e => {
+    if (fingers.has(e.pointerId)) {
+      fingers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if (pan) { sc.scrollLeft = pan.l - (avgF('x') - pan.x); sc.scrollTop = pan.t - (avgF('y') - pan.y); return; }
+    }
     const d = Studio.drag; if (!d || !Studio.open) return;
     const h = rollHit(e), tr = stTrack(), G = h.G;
     if (d.mode === 'erase') { const hit = noteAt(tr, h.m, h.step); if (hit) { tr.notes.splice(tr.notes.indexOf(hit), 1); stChanged(); } }
@@ -3854,8 +3942,9 @@ function setupRoll() {
     }
     drawRoll();
   });
-  addEventListener('mouseup', () => { if (Studio.drag) { Studio.drag = null; stChanged(); } });
-  sc.addEventListener('dblclick', e => { const h = rollHit(e), tr = stTrack(), hit = noteAt(tr, h.m, h.step); if (hit) { tr.notes.splice(tr.notes.indexOf(hit), 1); stChanged(); drawRoll(); } });
+  const lift = e => { fingers.delete(e.pointerId); if (fingers.size < 2) pan = null; if (Studio.drag) { Studio.drag = null; stChanged(); } };
+  addEventListener('pointerup', lift); addEventListener('pointercancel', lift);
+  sc.addEventListener('dblclick', e => { if (TOUCH) return; const h = rollHit(e), tr = stTrack(), hit = noteAt(tr, h.m, h.step); if (hit) { tr.notes.splice(tr.notes.indexOf(hit), 1); stChanged(); drawRoll(); } });
   // top bar
   $('stPlay').onclick = () => { if (Studio.playing) { const r = Studio.rec; stStop(); if (r) toast('Recording stopped.'); } else { Studio.rec = false; stPlay(); } };
   $('stRec').onclick = stRecord;
@@ -4667,7 +4756,7 @@ MINIS.rhythm = {
   },
   draw(t) {
     const st = this.st, rd = this.step.rounds[Math.min(st.r, this.step.rounds.length - 1)];
-    ctx.textAlign = 'right'; ctx.font = '700 15px Orbitron'; ctx.fillStyle = '#19f6ff'; ctx.fillText(`ROUND ${Math.min(st.r + 1, this.step.rounds.length)} / ${this.step.rounds.length} · ${rd.bpm} BPM`, W - 24, 40);
+    ctx.textAlign = 'right'; ctx.font = '700 15px Orbitron'; ctx.fillStyle = '#19f6ff'; ctx.fillText(`ROUND ${Math.min(st.r + 1, this.step.rounds.length)} / ${this.step.rounds.length} · ${rd.bpm} BPM`, TOUCH ? W - HUD_R : W - 24, 40);
     if (!st.notes) return;
     const perRow = st.barsN > 4 ? Math.ceil(st.barsN / 2) : st.barsN, rows = Math.ceil(st.barsN / perRow);
     const x0 = Math.max(60, W * 0.08), x1 = W - x0, bw = (x1 - x0) / perRow, rowH = Math.min(110, (layout.hitY - 150) / rows), s = Math.min(16, rowH / 5);
@@ -4954,7 +5043,7 @@ MINIS.jam = {
     ctx.fillStyle = 'rgba(10,4,24,.7)'; roundRect(mx - 4, my - 4, 20, mh + 8, 8); ctx.fill();
     ctx.fillStyle = '#3dff8b'; ctx.shadowColor = '#3dff8b'; ctx.shadowBlur = 14; roundRect(mx, my + mh * (1 - st.vibe), 12, mh * st.vibe, 6); ctx.fill(); ctx.shadowBlur = 0;
     ctx.save(); ctx.translate(mx - 10, my + mh / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.font = '700 12px Orbitron'; ctx.fillStyle = '#9c93c9'; ctx.fillText('VIBE', 0, 0); ctx.restore();
-    ctx.textAlign = 'right'; ctx.font = '700 15px Orbitron'; ctx.fillStyle = '#3dff8b'; ctx.fillText(st.notes + ' NOTES', W - 62, 40);
+    ctx.textAlign = 'right'; ctx.font = '700 15px Orbitron'; ctx.fillStyle = '#3dff8b'; ctx.fillText(st.notes + ' NOTES', W - HUD_R, 40);
   },
 };
 
@@ -5092,8 +5181,8 @@ const School = {
     }
     $('unitDetail').innerHTML = h + '</div>';
     document.querySelectorAll('.lrow').forEach(el => {
-      el.onclick = () => { if (el.classList.contains('locked')) { toast('Finish the lesson before it first'); return; } this.sel = el.dataset.l; renderMenu(); };
-      el.ondblclick = () => { if (!el.classList.contains('locked')) this.open(el.dataset.l); };
+      el.onclick = () => { if (el.classList.contains('locked')) { toast('Finish the lesson before it first'); return; } if (doubleTap('lesson:' + el.dataset.l)) { this.open(el.dataset.l); return; } this.sel = el.dataset.l; renderMenu(); };
+      el.ondblclick = () => { if (!TOUCH && !el.classList.contains('locked')) this.open(el.dataset.l); };
     });
     const nx = nextLesson();
     $('todayBtn').innerHTML = (lessonDone(selL.id) ? 'REVIEW ' : this.sel === nx.id && LESSONS.some(l => lessonDone(l.id)) ? 'NEXT LESSON ' : 'START ') + selL.id + ' &#9654;';
@@ -5367,6 +5456,158 @@ function svgHands() {
   return `<svg class="hsvg" viewBox="0 -16 520 246" style="max-width:520px">${hand(150, -1, '#ff3df2')}${hand(370, 1, '#19f6ff')}<text x="150" y="224" class="hl" fill="#ff3df2">LEFT HAND</text><text x="370" y="224" class="hl" fill="#19f6ff">RIGHT HAND</text></svg>`;
 }
 
+/* ---------- tablet: songs kept on the device, backups, touch ---------- */
+// Without the laptop helper there is no Songs folder, so songs added with + ADD SONGS
+// are kept in the browser's own database (IndexedDB) on the device.
+const Shelf = {
+  db:null, items:[], pending:[], editing:null,
+  open() {
+    if (this.db) return Promise.resolve(this.db);
+    return new Promise((ok, bad) => {
+      const r = indexedDB.open('neonkeys', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('songs', {keyPath:'key'});
+      r.onsuccess = () => { this.db = r.result; ok(this.db); };
+      r.onerror = () => bad(r.error);
+    });
+  },
+  async tx(mode, fn) {
+    const db = await this.open();
+    return new Promise((ok, bad) => { const t = db.transaction('songs', mode), st = t.objectStore('songs'), r = fn(st); t.oncomplete = () => ok(r && r.result); t.onerror = () => bad(t.error); });
+  },
+  key: (folder, file) => folder + '/' + file,
+  async load() {
+    if (NK.helper || !window.indexedDB) return;
+    this.items = (await this.tx('readonly', st => st.getAll())) || [];
+    for (const it of this.items) { try { this.show(it); } catch (e) { LIB_ERRORS.push(it.file + ' (' + e.message + ')'); } }
+  },
+  show(it) {
+    const id = 'lib:' + it.key, i = SONGS.findIndex(s => s.id === id);
+    const s = {id, title:MidiLib.prettyTitle(it.file), cat:it.folder, lib:true, rh:true, shelf:it.key, shelfFile:it.file, entry:MidiLib.load(it)};
+    applyParts(s); if (!s.notes.length) throw new Error('no playable notes');
+    if (i >= 0) SONGS.splice(i, 1, s); else SONGS.push(s);
+    if (!CATS.includes(s.cat)) CATS.push(s.cat);
+    return s;
+  },
+  groups() { return CATS.filter(c => c !== BUILTIN_CAT && c !== 'Lessons'); },
+  // the group dialog, used for adding and for moving/deleting
+  dialog(title, sub, cur, isEdit) {
+    $('sdTitle').textContent = title; $('sdSub').innerHTML = sub;
+    const gs = this.groups(); this.pick = cur || (gs.includes(settings.cat) ? settings.cat : gs[0] || '');
+    const draw = () => { $('sdCats').innerHTML = gs.map(g => `<span class="chip${g === this.pick && !$('sdNew').value.trim() ? ' on' : ''}" data-g="${g.replace(/"/g, '&quot;')}">${g}</span>`).join('') || '<small style="color:var(--dim)">No groups yet: type a name below.</small>';
+      $('sdCats').querySelectorAll('.chip').forEach(c => c.onclick = () => { this.pick = c.dataset.g; $('sdNew').value = ''; draw(); }); };
+    $('sdNew').value = gs.length ? '' : 'My Songs'; $('sdNew').oninput = draw; draw();
+    $('sdOk').textContent = isEdit ? 'MOVE' : 'ADD'; $('sdDel').classList.toggle('hidden', !isEdit);
+    $('songDlg').classList.remove('hidden');
+  },
+  chosen() { return ($('sdNew').value.trim().replace(/[\/<>"]/g, '').replace(/\s+/g, ' ').slice(0, 40)) || this.pick || 'My Songs'; },
+  close() { $('songDlg').classList.add('hidden'); this.pending = []; this.editing = null; },
+  async picked(files) {
+    this.pending = [];
+    for (const f of files) { try { const b = new Uint8Array(await f.arrayBuffer()); this.pending.push({file:f.name, data:toB64(b), ok:String.fromCharCode(...b.subarray(0, 4)) === 'MThd'}); } catch (e) {} }
+    if (!this.pending.length) return;
+    const bad = this.pending.filter(x => !x.ok).length;
+    this.dialog(`ADD ${this.pending.length} SONG${this.pending.length > 1 ? 'S' : ''}`, this.pending.slice(0, 6).map(x => x.file.replace(/</g, '&lt;')).join(', ') + (this.pending.length > 6 ? ` and ${this.pending.length - 6} more` : '')
+      + (bad ? `<br><b style="color:var(--gold)">${bad} of these ${bad > 1 ? "aren't MIDI files" : "isn't a MIDI file"} and will be skipped.</b>` : ''));
+  },
+  async add() {
+    const folder = this.chosen(), added = [], failed = [];
+    for (const x of this.pending) {
+      if (!x.ok) { failed.push(x.file); continue; }
+      const it = {key:this.key(folder, x.file), folder, file:x.file, data:x.data};
+      try { MidiLib.load(it); const s = this.show(it); await this.tx('readwrite', st => st.put(it)); added.push(s); }
+      catch (e) { failed.push(x.file); const i = SONGS.findIndex(s => s.id === 'lib:' + it.key); if (i >= 0) SONGS.splice(i, 1); }
+    }
+    this.close();
+    if (added.length) { settings.tab = 'free'; settings.cat = folder; settings.song = added[0].id; saveSettings(); }
+    renderMenu();
+    toast(added.length ? `Added ${added.length} song${added.length > 1 ? 's' : ''} to ${folder}` + (failed.length ? ` · couldn't read ${failed.join(', ')}` : '') : `Couldn't read ${failed.join(', ')}`);
+  },
+  edit(s) {
+    this.editing = s;
+    this.dialog(s.title.toUpperCase(), 'Move this song to another group, or delete it from this device.', s.cat, true);
+  },
+  dropSong(s) {
+    const i = SONGS.findIndex(x => x === s); if (i >= 0) SONGS.splice(i, 1);
+    for (let c = CATS.length - 1; c >= 0; c--) if (CATS[c] !== BUILTIN_CAT && !SONGS.some(x => x.cat === CATS[c])) CATS.splice(c, 1);
+  },
+  async move() {
+    const s = this.editing, folder = this.chosen(), oldKey = s.shelf; this.close();
+    if (folder === s.cat) return;
+    const it = {key:this.key(folder, s.shelfFile), folder, file:s.shelfFile, data:(this.items.find(x => x.key === oldKey) || {}).data};
+    if (!it.data) it.data = (await this.tx('readonly', st => st.get(oldKey)) || {}).data;
+    if (!it.data) { toast("Couldn't move that song"); return; }
+    await this.tx('readwrite', st => { st.put(it); return st.delete(oldKey); });
+    this.items = this.items.filter(x => x.key !== oldKey); this.items.push(it);
+    // keep its stars, scores and chosen parts under its new name
+    const was = s.id, now = 'lib:' + it.key;
+    for (const k of Object.keys(best)) if (k.startsWith(was + '_')) { best[now + k.slice(was.length)] = best[k]; delete best[k]; }
+    if (libParts[was]) { libParts[now] = libParts[was]; delete libParts[was]; store.set('libparts', libParts); }
+    store.set('best', best);
+    this.dropSong(s); const n = this.show(it);
+    settings.cat = folder; settings.song = n.id; saveSettings(); renderMenu(); toast(`Moved to ${folder}`);
+  },
+  async remove() {
+    const s = this.editing; if (!confirm(`Delete "${s.title}" from this device?`)) return;
+    const k = s.shelf; this.close();
+    await this.tx('readwrite', st => st.delete(k));
+    this.items = this.items.filter(x => x.key !== k);
+    this.dropSong(s);
+    if (settings.song === s.id) settings.song = (SONGS.find(x => x.cat === s.cat) || SONGS[0]).id;
+    if (!CATS.includes(settings.cat)) settings.cat = BUILTIN_CAT;
+    saveSettings(); renderMenu(); toast('Deleted');
+  }
+};
+$('addSongsBtn').onclick = () => { $('addSongsFile').value = ''; $('addSongsFile').click(); };
+$('addSongsFile').onchange = e => Shelf.picked([...e.target.files]);
+$('sdCancel').onclick = () => Shelf.close();
+$('sdOk').onclick = () => Shelf.editing ? Shelf.move() : Shelf.add();
+$('sdDel').onclick = () => Shelf.remove();
+
+// BACK UP / RESTORE: the same file as Save\progress.json on the laptop, so progress can travel both ways
+$('backupBtn').onclick = () => {
+  const d = new Date(), day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(NK.data)], {type:'application/json'}));
+  a.download = `neonkeys-progress-${day}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  toast('Backup saved to your Downloads');
+};
+$('restoreBtn').onclick = () => { $('restoreFile').value = ''; $('restoreFile').click(); };
+$('restoreFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  let d = null; try { d = JSON.parse(await f.text()); } catch (er) {}
+  if (!d || typeof d !== 'object' || Array.isArray(d) || !['settings', 'best', 'savedAt', 'stars'].some(k => k in d)) { toast("That file isn't a Neon Keys backup"); return; }
+  const when = d.savedAt ? new Date(+d.savedAt).toLocaleString() : 'an unknown date';
+  if (!confirm(`Load the backup from ${when}?\n\nThis replaces the progress on this device.`)) return;
+  d.savedAt = Date.now(); NK.data = d;
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k.startsWith('neonkeys.')) localStorage.removeItem(k); }
+    for (const k in d) localStorage.setItem('neonkeys.' + k, JSON.stringify(d[k]));
+  } catch (er) {}
+  if (NK.helper) { try { await fetch('/save', {method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(d)}); } catch (er) {} }
+  location.reload();
+};
+
+// touch screens: a pause button during songs, and double-tap instead of double-click
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+document.body.classList.toggle('touch', TOUCH);
+if (TOUCH) HUD_R = 122;   // room for the bigger full-screen button and the pause button
+let lastTap = {k:'', t:0};
+function doubleTap(k) { const now = performance.now(), yes = TOUCH && lastTap.k === k && now - lastTap.t < 450; lastTap = yes ? {k:'', t:0} : {k, t:now}; return yes; }
+$('pauseBtn').onclick = e => { if (Mini.active) Mini.quit(); else pause(); e.currentTarget.blur(); };
+let pauseShown = false;
+function updatePauseBtn() { const on = !Studio.open && (Mini.active || !!(game && !game.paused && !game.done)); if (on !== pauseShown) { pauseShown = on; $('pauseBtn').classList.toggle('hidden', !on); } }
+
+// keep the screen awake while Neon Keys is open (it sits on the music stand)
+let wakeLock = null;
+async function keepAwake() { if (!TOUCH || !navigator.wakeLock || document.hidden || wakeLock) return; try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch (e) {} }
+document.addEventListener('visibilitychange', keepAwake);
+addEventListener('pointerdown', keepAwake);
+
+// the installed app works offline (not used on the laptop)
+if (NK.app && 'serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+
 /* ---------- main loop ---------- */
 let lastT = performance.now();
 function frame(t) {
@@ -5376,10 +5617,14 @@ function frame(t) {
   Mini.update(dt); if (Mini.active && !document.hidden) addPlayTime(dt);
   Coach.tick(dt);
   updateCamera(dt); updateFX(dt);
-  render(t);
+  render(t); updatePauseBtn();
   requestAnimationFrame(frame);
 }
-resize(); buildCrowd(); renderMenu(); initMIDI();
+{ // songs added on this device: load them, then show them (back on the group you had open last time)
+  const cat = settings.cat, song = settings.song;
+  resize(); buildCrowd(); renderMenu(); initMIDI(); keepAwake();
+  Shelf.load().catch(() => {}).then(() => { if (CATS.includes(cat)) { settings.cat = cat; settings.song = song; } if (visible('menu')) renderMenu(); });
+}
 requestAnimationFrame(frame);
 </script>
 </body>
