@@ -435,7 +435,7 @@ body.touch .fsBtn{width:46px;height:46px}body.touch #pauseBtn{right:66px}
 body.touch input[type=range]{width:190px;height:30px}
 body.touch .stb{padding:10px 15px}
 body.touch .tb{width:30px;height:30px}
-body.touch #rollScroll{touch-action:none}
+body.touch #rollScroll,body.touch #c{touch-action:none}
 </style>
 </head>
 <body>
@@ -564,7 +564,7 @@ body.touch #rollScroll{touch-action:none}
     </div>
 
     <div class="remote" id="menuRemote"></div>
-    <div class="hint touchOnly">Press keys on your keyboard to test them on screen. &nbsp;Tap a song, then the big button to play (or double-tap it).
+    <div class="hint touchOnly">Press keys on your keyboard to test them on screen. &nbsp;No keyboard plugged in? During songs you can play the keys on screen with your fingers. &nbsp;Tap a song, then the big button to play (or double-tap it).
       During a song, tap <b>&#10073;&#10073;</b> at the top right to pause, or press the top C on your keyboard.</div>
     <div class="hint mouseOnly">Press keys on your keyboard to test them on screen. &nbsp;No cable? Computer keys
       <kbd>A</kbd>–<kbd>K</kbd> = C D E F G A B C, <kbd>W</kbd><kbd>E</kbd><kbd>T</kbd><kbd>Y</kbd><kbd>U</kbd> = black keys, <kbd>-</kbd>/<kbd>=</kbd> octave.
@@ -1352,7 +1352,7 @@ function hookMIDI() {
   const casio = ins.find(i => /casio/i.test(i.name));
   MIDI.name = (casio || ins[0] || {}).name || '';
   if (MIDI.connected) setStatus(true, (casio ? 'Casio CTK-2090' : MIDI.name) + ' connected');
-  else setStatus(false, 'Keyboard not found. Plug in the USB cable and turn the keyboard on.');
+  else setStatus(false, 'Keyboard not found. Plug in the USB cable and turn the keyboard on.' + (TOUCH ? ' Or play the keys on screen.' : ''));
 }
 function onMIDI(e) {
   const [st, d1, d2] = e.data, cmd = st & 0xf0;
@@ -5598,6 +5598,33 @@ function doubleTap(k) { const now = performance.now(), yes = TOUCH && lastTap.k 
 $('pauseBtn').onclick = e => { if (Mini.active) Mini.quit(); else pause(); e.currentTarget.blur(); };
 let pauseShown = false;
 function updatePauseBtn() { const on = !Studio.open && (Mini.active || !!(game && !game.paused && !game.done)); if (on !== pauseShown) { pauseShown = on; $('pauseBtn').classList.toggle('hidden', !on); } }
+
+// no Casio plugged in? then the keys on screen can be played with your fingers (sound comes from the tablet)
+function keyAtPoint(x, y) {
+  if (y < layout.hitY || y > H) return null;
+  const u = cam.lo + x / W * (cam.hi - cam.lo);
+  if (y < layout.hitY + 2 + (layout.kbH - 4) * 0.62)   // black keys sit on top of the white ones
+    for (let m = LOW; m <= HIGH; m++) { const k = KEYS[m]; if (k.black && u >= k.x && u < k.x + k.w) return m; }
+  for (let m = LOW; m <= HIGH; m++) { const k = KEYS[m]; if (!k.black && u >= k.x && u < k.x + k.w) return m; }
+  return null;
+}
+const touchKeys = new Map();   // finger -> the note it is holding
+const fingerOn = m => [...touchKeys.values()].includes(m);
+function touchRelease(id) { const m = touchKeys.get(id); touchKeys.delete(id); if (m != null && !fingerOn(m)) keyUp(m, 'touch'); }
+cv.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' || MIDI.connected) return;
+  const m = keyAtPoint(e.clientX, e.clientY); if (m === null) return;
+  e.preventDefault(); Audio.ensure();
+  touchKeys.set(e.pointerId, m); keyDown(m, 'touch', e.timeStamp);
+});
+addEventListener('pointermove', e => {   // slide along the keys
+  if (!touchKeys.has(e.pointerId)) return;
+  const was = touchKeys.get(e.pointerId), m = keyAtPoint(e.clientX, e.clientY); if (m === was) return;
+  touchRelease(e.pointerId); touchKeys.set(e.pointerId, m);
+  if (m !== null) keyDown(m, 'touch', e.timeStamp);
+});
+addEventListener('pointerup', e => { if (touchKeys.has(e.pointerId)) touchRelease(e.pointerId); });
+addEventListener('pointercancel', e => { if (touchKeys.has(e.pointerId)) touchRelease(e.pointerId); });
 
 // keep the screen awake while Neon Keys is open (it sits on the music stand)
 let wakeLock = null;
