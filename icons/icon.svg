@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0633"/><stop offset="1" stop-color="#07020f"/></linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe46b"/><stop offset=".55" stop-color="#ff7a3d"/><stop offset="1" stop-color="#ff2d95"/></linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="214" r="112" fill="url(#sun)"/>
+  <g fill="#1a0633"><rect x="140" y="226" width="232" height="9"/><rect x="140" y="252" width="232" height="12"/><rect x="140" y="282" width="232" height="15"/></g>
+  <!-- falling notes -->
+  <g filter="url(#glow)"><rect x="176" y="108" width="30" height="74" rx="10" fill="#19f6ff"/><rect x="306" y="140" width="30" height="52" rx="10" fill="#ff3df2"/></g>
+  <!-- keys -->
+  <g filter="url(#glow)">
+    <rect x="96" y="318" width="320" height="104" rx="14" fill="#07020f" stroke="#19f6ff" stroke-width="7"/>
+  </g>
+  <g fill="#ecebff">
+    <rect x="110" y="330" width="34" height="80" rx="5"/><rect x="152" y="330" width="34" height="80" rx="5"/><rect x="194" y="330" width="34" height="80" rx="5"/>
+    <rect x="236" y="330" width="34" height="80" rx="5"/><rect x="278" y="330" width="34" height="80" rx="5"/><rect x="320" y="330" width="34" height="80" rx="5"/><rect x="362" y="330" width="34" height="80" rx="5"/>
+  </g>
+  <rect x="152" y="330" width="34" height="80" rx="5" fill="#19f6ff"/>
+  <g fill="#07020f">
+    <rect x="135" y="330" width="22" height="48" rx="4"/><rect x="179" y="330" width="22" height="48" rx="4"/><rect x="263" y="330" width="22" height="48" rx="4"/>
+    <rect x="305" y="330" width="22" height="48" rx="4"/><rect x="347" y="330" width="22" height="48" rx="4"/>
+  </g>
+  <rect x="305" y="330" width="22" height="48" rx="4" fill="#ff3df2"/>
+</svg>
